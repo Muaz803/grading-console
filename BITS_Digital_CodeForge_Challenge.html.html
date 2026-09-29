@@ -445,6 +445,8 @@ body.ready .app{opacity:1;transform:none;transition:opacity .5s var(--ease) .1s,
 #mgBody .mg-row:hover .mg-del,.mg-del:focus-visible{opacity:1}
 .mg-del:hover{color:var(--danger);background:var(--danger-soft)}
 .mg-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mg-info{min-width:0;flex:1}
+.mg-hint{margin:1px 0 0;font-size:11.5px;line-height:1.3;color:var(--ink-3)}
 .mg-status{margin:0;min-width:0;font-size:13px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mg-status[data-tone="error"]{color:var(--danger)}
 .mg-status[data-tone="ok"]{color:var(--ok)}
@@ -809,7 +811,10 @@ dialog[open]{animation:pop .25s var(--ease)}
             </div>
           </div>
           <div class="mg-foot">
-            <p class="mg-status" id="mgStatus" data-tone=""></p>
+            <div class="mg-info">
+              <p class="mg-status" id="mgStatus" data-tone=""></p>
+              <p class="mg-hint">Handles 1,000+ rows per import.</p>
+            </div>
             <div class="mg-actions">
               <button type="button" class="btn btn-quiet btn-sm mg-expand" id="mgExpand">Expand</button>
               <button type="button" class="btn btn-primary btn-sm" id="mgImport">Import rows</button>
@@ -1129,7 +1134,8 @@ function handleFile(f){
       const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
       result=parseRows(raw);
       // Keep the raw rows of a file rejected for row problems so "Fix in editor" can open them.
-      if(/^File not loaded: fix \d+ problem/.test(result.error)) result.fixRows=raw;
+      // Same for a file that has rows but lacks a required column.
+      if(/^File not loaded: (fix \d+ problem|missing required column)/.test(result.error)) result.fixRows=raw;
     }catch(err){
       result={rows:[],error:`File not loaded: "${f.name}" could not be read as an Excel workbook.`};
     }
@@ -1634,7 +1640,7 @@ const desk=matchMedia("(min-width:1024px)");
 const UPLOAD_LABEL="Upload marks file. Drop an Excel file here or press Enter to browse.";
 const mgBody=$("mgBody"), mgStatus=$("mgStatus"), mgImport=$("mgImport"), expandDlg=$("expandDialog");
 const tabs={upload:$("tabUpload"),manual:$("tabManual")};
-const G={rows:[],groups:new Map(),bad:new Set(),pending:new Set(),total:0,filled:0,timer:0,sourceName:null,lastCell:null};
+const G={rows:[],groups:new Map(),bad:new Set(),pending:new Set(),total:0,filled:0,timer:0,sourceName:null,lastCell:null,active:null,note:""};
 let userMode="upload", rowUid=0;
 
 const ROW_TPL=(()=>{
@@ -1703,7 +1709,11 @@ function validateRow(r){
   r.filled=isFilled(r);
   let probs=[];
   if(r.filled){
-    probs=rowProblems(id,c,r.marks).map(([f,m])=>({f,m}));
+    // Live only: a blank Total Marks reads "is blank" like the other blanks, and blanks in the row
+    // being typed in wait until focus leaves it. Bad values are flagged at once.
+    probs=rowProblems(id,c,r.marks)
+      .map(([f,m])=>({f,m:f===2&&r.marks.trim()===""?"Total Marks is blank":m,blank:(f===0?!id:f===1?!c:r.marks.trim()==="")}))
+      .filter(p=>!(p.blank&&G.active===r));
     if(r.key){
       const first=G.groups.get(r.key)[0];   // like parseRows, the later occurrence is the one flagged
       if(first!==r) probs.push({f:0,m:dupMsg(id,c,first.i+1)});
@@ -1732,7 +1742,8 @@ function updateStatus(){
   if(G.total){
     text=firstProblemText()+(G.total>1?` and ${G.total-1} more`:"");
     tone="error";
-  }else if(n){ text=`${n} row${n===1?"":"s"} ready`; tone="ok"; }
+  }else if(G.note){ text=G.note; tone=""; }
+  else if(n){ text=`${n} row${n===1?"":"s"} ready`; tone="ok"; }
   else{ text="Type or paste rows to import."; tone=""; }
   mgStatus.textContent=text; mgStatus.title=text; mgStatus.dataset.tone=tone;
   mgImport.textContent=n?`Import ${n} row${n===1?"":"s"}`:"Import rows";
@@ -1781,7 +1792,7 @@ function setRows(list){
   mgBody.textContent="";
   G.rows=[]; G.groups.clear(); G.bad.clear(); G.pending.clear();
   clearTimeout(G.timer); G.timer=0;
-  G.total=0; G.filled=0; G.lastCell=null;
+  G.total=0; G.filled=0; G.lastCell=null; G.active=null; G.note="";
   const frag=document.createDocumentFragment();
   list.forEach(v=>appendRow(v[0],v[1],v[2],false,frag));
   if(!G.rows.length) appendRow("","","",false,frag);
@@ -1832,7 +1843,23 @@ mgBody.addEventListener("input",e=>{
   clearTimeout(G.timer);
   G.timer=setTimeout(flushPending,150);
 });
-mgBody.addEventListener("focusin",e=>{ if(e.target.classList.contains("mg-in")) G.lastCell=e.target; });
+mgBody.addEventListener("focusin",e=>{
+  if(!e.target.classList.contains("mg-in")) return;
+  G.lastCell=e.target;
+  G.active=e.target.closest(".mg-row")._r;
+});
+// Leaving a row checks just that row (blanks included).
+mgBody.addEventListener("focusout",e=>{
+  if(!e.target.classList.contains("mg-in") || !document.hasFocus()) return;
+  const prev=e.target.closest(".mg-row")._r;
+  const to=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest(".mg-row"):null;
+  if(to===prev.el) return;   // still inside the same row
+  if(G.active===prev) G.active=null;
+  if(G.rows[prev.i]!==prev) return;
+  if(G.pending.has(prev)) flushPending();
+  validateRow(prev);
+  updateStatus();
+});
 mgBody.addEventListener("click",e=>{
   const b=e.target.closest(".mg-del");
   if(b) deleteRow(b.closest(".mg-row")._r);
@@ -1889,6 +1916,7 @@ mgBody.addEventListener("paste",e=>{
 /* --- import --- */
 function importGrid(){
   flushPending();
+  G.active=null;   // Import checks every cell, including blanks in the row last edited
   validateAll();
   const filled=G.rows.filter(r=>r.filled);
   if(!filled.length){
@@ -1987,11 +2015,21 @@ desk.addEventListener("change",applyMode);
 // Rejected upload -> open its rows in the editor with the bad cells already marked.
 $("fixEditor").onclick=()=>{
   if(!fixSource) return;
-  const keys={};
+  const keys={};   // same case-insensitive, trimmed header matching as parseRows
   fixSource.rows.forEach(r=>Object.keys(r).forEach(k=>keys[k.trim().toLowerCase()]=k));
-  const cellText=(r,name)=>{ const v=r[keys[name]]; return v==null?"":String(v); };
+  const src={};    // required column (lower case) -> the file's column for it
+  REQUIRED_COLUMNS.forEach(h=>{ src[h.toLowerCase()]=keys[h.toLowerCase()]; });
+  const missing=REQUIRED_COLUMNS.filter(h=>src[h.toLowerCase()]===undefined);
+  const extra=Object.keys(keys).filter(k=>!(k in src)&&k!=="__rownum__");
+  let note="";
+  if(missing.length===1&&extra.length===1){   // one gap, one spare column: assume it is the missing one
+    src[missing[0].toLowerCase()]=keys[extra[0]];
+    note=`Used column "${keys[extra[0]].trim()}" as ${missing[0]}. Check before importing.`;
+  }
+  const cellText=(r,name)=>{ const k=src[name]; if(k===undefined) return ""; const v=r[k]; return v==null?"":String(v); };
   setRows(fixSource.rows.map(r=>[cellText(r,"bits id"),cellText(r,"course"),cellText(r,"total marks")]));
   G.sourceName=fixSource.name;
+  G.note=note; updateStatus();
   userMode="manual"; applyMode();
   if(!focusFirstBad()) focusCell(G.rows[0],0);
 };
