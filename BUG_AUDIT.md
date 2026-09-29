@@ -605,6 +605,7 @@ Every finding states how it was established:
 | 68 | CSV: course per row, grade-range table, timestamp, total students, instructor, and an optional `.xlsx` export. |
 | 69 | Replace `alert`/`confirm` with in-page, accessible notices and dialogs. |
 | 70 | Summary: total students, percentage per grade, and an "Ungraded" count (Stage 1 if used to fix #4). |
+| 71 | Enter marks without a file: an in-card spreadsheet editor (desktop) with paste from Excel, live validation, and one-click "Fix in editor" for rejected uploads. It uses the same validation as file upload. |
 
 ---
 

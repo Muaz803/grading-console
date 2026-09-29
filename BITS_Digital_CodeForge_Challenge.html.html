@@ -295,7 +295,7 @@ body.ready .app{opacity:1;transform:none;transition:opacity .5s var(--ease) .1s,
   border-radius:var(--r-lg);
   background:var(--surface);
   border:1.5px dashed var(--line-strong);
-  display:flex;flex-direction:column;justify-content:center;
+  display:flex;flex-direction:column;justify-content:flex-start;
   padding:32px;
   transition:border-color .2s, background-color .2s, box-shadow .2s;
 }
@@ -304,7 +304,7 @@ body.ready .app{opacity:1;transform:none;transition:opacity .5s var(--ease) .1s,
 .drop[data-state="drag"]{border-style:solid;border-color:var(--brand);background:var(--brand-soft);box-shadow:0 0 0 6px color-mix(in srgb, var(--brand) 9%, transparent)}
 .drop[data-state="success"]{border-style:solid;border-color:var(--line)}
 .drop[data-state="error"]{border-style:solid;border-color:var(--danger-line)}
-.drop-view{display:none;width:100%}
+.drop-view{display:none;width:100%;margin-block:auto}
 .drop[data-state="idle"] .v-idle,
 .drop[data-state="drag"] .v-idle,
 .drop[data-state="reading"] .v-reading,
@@ -379,6 +379,79 @@ body.ready .app{opacity:1;transform:none;transition:opacity .5s var(--ease) .1s,
 .guide-body p{margin:0;max-width:72ch}
 .cols{display:flex;gap:6px;flex-wrap:wrap}
 .cols code{font:600 12px var(--font-ui);padding:3px 8px;border-radius:6px;background:var(--brand-soft);color:var(--g1)}
+
+/* ============================================================
+   Enter manually (desktop only): segmented control + in-card grid
+   ============================================================ */
+.modebar-row{display:none;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-bottom:10px;text-align:left}
+.modebar{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+.mode-tab{
+  display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;
+  border:0;border-radius:999px;background:transparent;cursor:pointer;
+  color:var(--ink-3);font-size:13px;font-weight:600;white-space:nowrap;
+  transition:background-color .15s, color .15s, box-shadow .15s;
+}
+.mode-tab:hover{color:var(--ink)}
+.mode-tab svg{flex:none}
+.mode-tab[aria-selected="true"]{
+  background:var(--surface);color:var(--ink);
+  box-shadow:0 0 0 1px var(--line), 0 1px 2px color-mix(in srgb, var(--shadow) 18%, transparent);
+}
+.mode-tab[aria-selected="true"] svg{color:var(--brand)}
+.mode-tab:focus-visible{box-shadow:var(--focus)}
+.mode-hint{display:none;font-size:12px;color:var(--ink-3)}
+#fixEditor{display:none}
+@media (min-width:1024px){
+  .modebar-row{display:flex}
+  #fixEditor:not([hidden]){display:inline-flex}
+}
+.drop[data-mode="manual"]{cursor:default;align-items:stretch;text-align:left}
+.drop[data-mode="manual"][data-state="success"],.drop[data-mode="manual"][data-state="error"]{border-style:dashed;border-color:var(--line-strong)}
+.drop[data-mode="manual"]:hover{border-color:var(--line-strong)}
+.drop[data-mode="manual"] .mode-hint{display:inline}
+.drop[data-mode="manual"] .drop-view:not(.v-manual){display:none}
+.v-manual{display:none}
+.drop[data-mode="manual"] .v-manual{display:block}
+
+.mg{display:flex;flex-direction:column;gap:12px;width:100%}
+.mg-scroll{
+  min-height:220px;max-height:340px;overflow:auto;overscroll-behavior:contain;scroll-padding-top:34px;
+  border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);
+}
+.mg-row{display:grid;grid-template-columns:44px minmax(0,1.3fr) minmax(0,1fr) minmax(0,.8fr) 36px;align-items:center;border-bottom:1px solid var(--line)}
+#mgBody .mg-row:last-child{border-bottom:0}
+#mgBody .mg-row:hover{background:color-mix(in srgb, var(--brand) 4%, transparent)}
+.mg-head{position:sticky;top:0;z-index:2;height:34px;background:var(--surface-2);font-size:12px;font-weight:600;color:var(--ink-3)}
+.mg-head span{padding:0 10px}
+.mg-head span:nth-child(4){text-align:right}
+.mg-n{padding:0;text-align:center;font-size:12px;color:var(--ink-3)}
+.mg-head .mg-n{padding:0}
+.mg-c{position:relative;min-width:0}
+.mg-in{
+  display:block;width:100%;height:36px;padding:0 10px;
+  border:0;border-radius:0;background:transparent;color:var(--ink);font-size:14px;
+}
+.mg-in::placeholder{color:var(--placeholder)}
+.mg-c-num .mg-in{text-align:right;font-variant-numeric:tabular-nums}
+.mg-in:focus{outline:none;background:var(--surface);box-shadow:inset 0 0 0 2px var(--brand)}
+.mg-in[aria-invalid="true"]{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger-line)}
+.mg-in[aria-invalid="true"]:focus{box-shadow:inset 0 0 0 2px var(--danger)}
+.mg-x{display:flex;justify-content:center}
+.mg-del{
+  width:26px;height:26px;display:grid;place-items:center;
+  border:0;border-radius:6px;background:transparent;color:var(--ink-3);cursor:pointer;opacity:.55;
+  transition:opacity .15s, color .15s, background-color .15s;
+}
+#mgBody .mg-row:hover .mg-del,.mg-del:focus-visible{opacity:1}
+.mg-del:hover{color:var(--danger);background:var(--danger-soft)}
+.mg-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mg-status{margin:0;min-width:0;font-size:13px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mg-status[data-tone="error"]{color:var(--danger)}
+.mg-status[data-tone="ok"]{color:var(--ok)}
+.mg-actions{display:flex;gap:8px;flex:none}
+.mg.in-dialog .mg-expand{display:none}
+.mg-away{padding:40px 16px;text-align:center;color:var(--ink-2);border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2)}
+.mg-away p{margin:0 0 12px}
 
 /* ============================================================
    Workspace
@@ -529,6 +602,11 @@ dialog[open]{animation:pop .25s var(--ease)}
 .dlg h2{font-size:20px;margin-bottom:8px}
 .dlg p{margin:0;color:var(--ink-2)}
 .dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+#expandDialog{width:min(1000px,calc(100vw - 48px))}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:4px}
+.dlg-head h2{margin:0}
+.dlg-note{margin:0 0 14px;font-size:13px}
+#expandDialog .mg-scroll{max-height:min(62vh,640px)}
 
 /* ============================================================
    Responsive
@@ -665,6 +743,19 @@ dialog[open]{animation:pop .25s var(--ease)}
     <div class="drop" id="drop" data-state="idle" tabindex="0" role="button"
          aria-label="Upload marks file. Drop an Excel file here or press Enter to browse.">
 
+      <!-- desktop only: choose how to provide the marks -->
+      <div class="modebar-row">
+        <div class="modebar" id="modeTabs" role="tablist" aria-label="How to provide marks">
+          <button type="button" class="mode-tab" role="tab" id="tabUpload" aria-selected="true" data-mode="upload">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 10.5V2.8M8 2.8 5 5.8M8 2.8l3 3M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Upload file
+          </button>
+          <button type="button" class="mode-tab" role="tab" id="tabManual" aria-selected="false" aria-controls="mgPanel" tabindex="-1" data-mode="manual">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.8" stroke="currentColor" stroke-width="1.6"/><path d="M2 6.6h12M2 9.9h12M6.2 6.6V13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Enter manually
+          </button>
+        </div>
+        <span class="mode-hint">Paste from Excel with Ctrl+V</span>
+      </div>
+
       <!-- idle + drag-over -->
       <div class="drop-view v-idle">
         <div class="drop-icon">
@@ -696,9 +787,40 @@ dialog[open]{animation:pop .25s var(--ease)}
             <div class="filename" id="fileName"></div>
             <div class="filemeta" id="fileMeta"></div>
           </div>
+          <button type="button" class="btn btn-primary btn-sm" id="fixEditor" hidden>Fix in editor</button>
           <button type="button" class="btn btn-quiet btn-sm" id="replace">Replace file</button>
         </div>
         <div class="result-body" id="resultBody"></div>
+      </div>
+
+      <!-- enter manually (desktop only) -->
+      <div class="drop-view v-manual" id="mgPanel" role="tabpanel" aria-labelledby="tabManual">
+        <div class="mg" id="mg">
+          <div class="mg-scroll" id="mgScroll">
+            <div role="grid" id="mgGrid" aria-label="Marks entry: BITS ID, Course and Total Marks">
+              <div class="mg-row mg-head" role="row">
+                <span class="mg-n" role="columnheader">#</span>
+                <span role="columnheader">BITS ID</span>
+                <span role="columnheader">Course</span>
+                <span role="columnheader">Total Marks</span>
+                <span role="columnheader" aria-label="Delete row"></span>
+              </div>
+              <div id="mgBody" role="rowgroup"></div>
+            </div>
+          </div>
+          <div class="mg-foot">
+            <p class="mg-status" id="mgStatus" data-tone=""></p>
+            <div class="mg-actions">
+              <button type="button" class="btn btn-quiet btn-sm mg-expand" id="mgExpand">Expand</button>
+              <button type="button" class="btn btn-primary btn-sm" id="mgImport">Import rows</button>
+            </div>
+          </div>
+          <div class="sr-only" id="mgAnnounce" role="status" aria-live="polite"></div>
+        </div>
+        <div class="mg-away" id="mgAway" hidden>
+          <p>The editor is open in the expanded view.</p>
+          <button type="button" class="btn btn-quiet btn-sm" id="mgReturn">Return to card</button>
+        </div>
       </div>
     </div>
     <input type="file" id="file" accept=".xlsx,.xls" hidden>
@@ -824,6 +946,17 @@ dialog[open]{animation:pop .25s var(--ease)}
   </form>
 </dialog>
 
+<dialog id="expandDialog" aria-labelledby="expandTitle">
+  <div class="dlg">
+    <div class="dlg-head">
+      <h2 id="expandTitle">Enter marks</h2>
+      <button type="button" class="btn btn-quiet btn-sm" id="expandClose" aria-label="Close expanded editor">Close</button>
+    </div>
+    <p class="dlg-note">Type or paste from Excel with Ctrl+V. Escape returns to the card.</p>
+    <div id="expandSlot"></div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite">
   <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l3 3 6-6.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   <span id="toastText"></span>
@@ -878,6 +1011,23 @@ const finalizeCounts = {};  // per course
 
 const REQUIRED_COLUMNS=["BITS ID","Course","Total Marks"];
 
+// Cell rules shared by parseRows (file upload and grid import) and the grid's live checks,
+// so the two can never disagree. Problems are [column index, message] without the "Row N: " prefix.
+function toMark(raw){
+  return (raw==null||(typeof raw==="string"&&raw.trim()===""))?NaN:Number(raw);
+}
+function rowProblems(id,courseName,raw){
+  const mark=toMark(raw), p=[];
+  if(!id) p.push([0,"BITS ID is blank"]);
+  if(!courseName) p.push([1,"Course is blank"]);
+  if(!Number.isFinite(mark)) p.push([2,`Total Marks "${raw??""}" is not a number`]);
+  else if(mark<0||mark>100) p.push([2,`Total Marks ${mark} must be between 0 and 100`]);
+  else if(!Number.isInteger(mark)) p.push([2,`Total Marks ${mark} must be a whole number`]);
+  return p;
+}
+function dupKey(id,courseName){ return id.toUpperCase()+"\u0000"+courseName; }
+function dupMsg(id,courseName,firstRow){ return `duplicate BITS ID ${id} in course ${courseName} (also in row ${firstRow})`; }
+
 // Validate and normalise uploaded rows: BITS ID/Course as trimmed strings,
 // Total Marks as a whole number 0-100. Any problem rejects the whole file.
 function parseRows(rows){
@@ -896,13 +1046,9 @@ function parseRows(rows){
     const id=String(r[keys["bits id"]]??"").trim();
     const courseName=String(r[keys["course"]]??"").trim();
     const raw=r[keys["total marks"]];
-    const mark=(raw==null||(typeof raw==="string"&&raw.trim()===""))?NaN:Number(raw);
+    const mark=toMark(raw);
 
-    if(!id) problems.push(`Row ${rowNo}: BITS ID is blank`);
-    if(!courseName) problems.push(`Row ${rowNo}: Course is blank`);
-    if(!Number.isFinite(mark)) problems.push(`Row ${rowNo}: Total Marks "${raw??""}" is not a number`);
-    else if(mark<0||mark>100) problems.push(`Row ${rowNo}: Total Marks ${mark} must be between 0 and 100`);
-    else if(!Number.isInteger(mark)) problems.push(`Row ${rowNo}: Total Marks ${mark} must be a whole number`);
+    rowProblems(id,courseName,raw).forEach(([,msg])=>problems.push(`Row ${rowNo}: ${msg}`));
 
     return {"BITS ID":id,"Course":courseName,"Total Marks":mark,rowNo};
   });
@@ -911,8 +1057,8 @@ function parseRows(rows){
   const seen={};
   out.forEach(d=>{
     if(!d["BITS ID"] || !d.Course) return;
-    const key=d["BITS ID"].toUpperCase()+"\u0000"+d.Course;
-    if(key in seen) problems.push(`Row ${d.rowNo}: duplicate BITS ID ${d["BITS ID"]} in course ${d.Course} (also in row ${seen[key]})`);
+    const key=dupKey(d["BITS ID"],d.Course);
+    if(key in seen) problems.push(`Row ${d.rowNo}: ${dupMsg(d["BITS ID"],d.Course,seen[key])}`);
     else seen[key]=d.rowNo;
   });
 
@@ -980,10 +1126,14 @@ function handleFile(f){
     let result;
     try{
       const wb=XLSX.read(ev.target.result,{type:"binary"});
-      result=parseRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
+      const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      result=parseRows(raw);
+      // Keep the raw rows of a file rejected for row problems so "Fix in editor" can open them.
+      if(/^File not loaded: fix \d+ problem/.test(result.error)) result.fixRows=raw;
     }catch(err){
       result={rows:[],error:`File not loaded: "${f.name}" could not be read as an Excel workbook.`};
     }
+    if(!result.error){ clearDraft(); loadedSource=f.name; }  // a good file replaces any typed draft
     loadResult(result, f);
   };
   r.onerror=()=>loadResult({rows:[],error:`File not loaded: "${f.name}" could not be read.`}, f);
@@ -1392,14 +1542,20 @@ const ICON_ERR=`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function fmtSize(b){return b<1024?`${b} B`:b<1048576?`${(b/1024).toFixed(1)} KB`:`${(b/1048576).toFixed(1)} MB`}
 
+let fixSource=null;     // rows of the last upload rejected for row problems, for "Fix in editor"
+let loadedSource=null;  // name of the file the loaded data came from, if any
+
+// f is a File, or {label, meta} for rows entered in the console (no file, no size).
 function showUploadResult(result, f){
   const ok=!result.error;
   drop.dataset.state=ok?"success":"error";
   $("fileIcon").innerHTML=ok?ICON_OK:ICON_ERR;
-  $("fileName").textContent=f?f.name:"Marks file";
-  $("fileName").title=f?f.name:"";
-  $("fileMeta").textContent=f?`${fmtSize(f.size)}, uploaded ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}`:"";
+  $("fileName").textContent=f?(f.label||f.name):"Marks file";
+  $("fileName").title=f?(f.label||f.name):"";
+  $("fileMeta").textContent=f?(f.meta!==undefined?f.meta:`${fmtSize(f.size)}, uploaded ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}`):"";
   $("replace").textContent=ok?"Replace file":"Choose another file";
+  fixSource=(!ok&&result.fixRows)?{rows:result.fixRows,name:f&&f.name?f.name:""}:null;
+  $("fixEditor").hidden=!fixSource;
   const body=$("resultBody");
   if(ok){
     const courses=new Set(data.map(d=>d.Course)).size;
@@ -1434,30 +1590,414 @@ function openPicker(){
 }
 file.onchange=e=>handleFile(e.target.files[0]);
 drop.addEventListener("click",e=>{
+  if(drop.dataset.mode==="manual" || e.target.closest(".modebar-row")) return;  // the editor and the mode switch never open the picker
   if(drop.dataset.state==="idle" || e.target.closest("#replace")) openPicker();
 });
 drop.addEventListener("keydown",e=>{
+  if(drop.dataset.mode==="manual") return;
   if((e.key==="Enter"||e.key===" ") && e.target===drop && drop.dataset.state!=="reading"){ e.preventDefault(); openPicker(); }
 });
 
+// In manual mode only file drags matter; text dragged inside the grid is left alone.
+const hasFiles=e=>!!(e.dataTransfer&&[...e.dataTransfer.types].includes("Files"));
+const ignoreDrag=e=>drop.dataset.mode==="manual" && !hasFiles(e);
 let dragDepth=0, stateBeforeDrag="idle";
 drop.addEventListener("dragenter",e=>{
+  if(ignoreDrag(e)) return;
   e.preventDefault();
   if(dragDepth++===0 && drop.dataset.state!=="reading"){ stateBeforeDrag=drop.dataset.state; drop.dataset.state="drag"; }
 });
-drop.addEventListener("dragover",e=>{ e.preventDefault(); e.dataTransfer.dropEffect="copy"; });
-drop.addEventListener("dragleave",()=>{
+drop.addEventListener("dragover",e=>{ if(ignoreDrag(e)) return; e.preventDefault(); e.dataTransfer.dropEffect="copy"; });
+drop.addEventListener("dragleave",e=>{
+  if(ignoreDrag(e)) return;
   if(--dragDepth<=0){ dragDepth=0; if(drop.dataset.state==="drag") drop.dataset.state=stateBeforeDrag; }
 });
 drop.addEventListener("drop",e=>{
+  if(ignoreDrag(e)) return;
   e.preventDefault();
   dragDepth=0;
   if(drop.dataset.state==="drag") drop.dataset.state=stateBeforeDrag;
   const f=e.dataTransfer.files[0];
-  if(f) handleFile(f);
+  if(f){
+    if(drop.dataset.mode==="manual") setMode("upload");  // the draft stays in memory
+    handleFile(f);
+  }
 });
 // A file dropped outside the zone should not navigate away from the console.
 ["dragover","drop"].forEach(t=>window.addEventListener(t,e=>{ if(!drop.contains(e.target)) e.preventDefault(); }));
+
+/* ===== ENTER MANUALLY (desktop) =====
+   An in-card grid. Import feeds the same parseRows/loadResult path as a file, and the live cell
+   checks call the same rowProblems/dupKey/dupMsg rules, so a typed row and an uploaded row are
+   judged identically. The draft lives in memory only. */
+const desk=matchMedia("(min-width:1024px)");
+const UPLOAD_LABEL="Upload marks file. Drop an Excel file here or press Enter to browse.";
+const mgBody=$("mgBody"), mgStatus=$("mgStatus"), mgImport=$("mgImport"), expandDlg=$("expandDialog");
+const tabs={upload:$("tabUpload"),manual:$("tabManual")};
+const G={rows:[],groups:new Map(),bad:new Set(),pending:new Set(),total:0,filled:0,timer:0,sourceName:null,lastCell:null};
+let userMode="upload", rowUid=0;
+
+const ROW_TPL=(()=>{
+  const d=document.createElement("div");
+  d.className="mg-row"; d.setAttribute("role","row");
+  const cell=(f,ph)=>`<div class="mg-c${f===2?" mg-c-num":""}" role="gridcell"><input class="mg-in" data-f="${f}" placeholder="${ph}" autocomplete="off" spellcheck="false"></div>`;
+  d.innerHTML=`<span class="mg-n" role="rowheader"></span>${cell(0,"BITS ID")}${cell(1,"Course")}${cell(2,"0 to 100")}`+
+    `<div class="mg-c mg-x" role="gridcell"><button type="button" class="mg-del" tabindex="-1"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 2.5l7 7m0-7l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>`;
+  return d;
+})();
+const COL_NAMES=["BITS ID","Course","Total Marks"];
+
+// A row counts once any cell is filled; a Course that was only auto-filled from the row above does not.
+function isFilled(r){ return !(r.id.trim()===""&&r.marks.trim()===""&&(r.course.trim()===""||r.auto)); }
+function keyOf(r){ const id=r.id.trim(), c=r.course.trim(); return id&&c?dupKey(id,c):null; }
+
+function labelRow(r){
+  const n=r.i+1;
+  r.el.firstChild.textContent=n;
+  r.ins.forEach((inp,f)=>inp.setAttribute("aria-label",`Row ${n} ${COL_NAMES[f]}`));
+  r.del.setAttribute("aria-label",`Delete row ${n}`);
+}
+function appendRow(id,course,marks,auto,parent){
+  const el=ROW_TPL.cloneNode(true), ins=el.querySelectorAll(".mg-in");
+  const r={id:id||"",course:course||"",marks:marks||"",auto:!!auto,i:G.rows.length,el,ins,
+    cells:el.querySelectorAll(".mg-c"),del:el.querySelector(".mg-del"),msg:[null,null,null],
+    key:null,probs:[],sig:"",filled:false,uid:++rowUid};
+  ins[0].value=r.id; ins[1].value=r.course; ins[2].value=r.marks;
+  el._r=r;
+  G.rows.push(r);
+  labelRow(r);
+  (parent||mgBody).appendChild(el);
+  return r;
+}
+function setCell(r,f,v){
+  if(f===0) r.id=v; else if(f===1){ r.course=v; r.auto=false; } else r.marks=v;
+  r.ins[f].value=v;
+}
+
+// Show or clear the problems on a row's cells.
+function paintRow(r){
+  for(let f=0;f<3;f++){
+    const inp=r.ins[f], cell=r.cells[f];
+    const text=r.probs.filter(p=>p.f===f).map(p=>p.m).join(". ");
+    if(text){
+      if(!r.msg[f]){
+        const s=document.createElement("span");
+        s.className="sr-only"; s.id=`mge${r.uid}-${f}`;
+        cell.appendChild(s); r.msg[f]=s;
+      }
+      r.msg[f].textContent=text;
+      inp.setAttribute("aria-invalid","true");
+      inp.setAttribute("aria-describedby",r.msg[f].id);
+      cell.title=text;
+    }else{
+      inp.removeAttribute("aria-invalid");
+      inp.removeAttribute("aria-describedby");
+      cell.removeAttribute("title");
+      if(r.msg[f]) r.msg[f].textContent="";
+    }
+  }
+}
+
+function validateRow(r){
+  const id=r.id.trim(), c=r.course.trim(), was=r.filled;
+  r.filled=isFilled(r);
+  let probs=[];
+  if(r.filled){
+    probs=rowProblems(id,c,r.marks).map(([f,m])=>({f,m}));
+    if(r.key){
+      const first=G.groups.get(r.key)[0];   // like parseRows, the later occurrence is the one flagged
+      if(first!==r) probs.push({f:0,m:dupMsg(id,c,first.i+1)});
+    }
+  }
+  G.total+=probs.length-r.probs.length;
+  G.filled+=(r.filled?1:0)-(was?1:0);
+  r.probs=probs;
+  if(probs.length) G.bad.add(r); else G.bad.delete(r);
+  const sig=probs.map(p=>p.f+p.m).join("|");
+  if(sig!==r.sig){ r.sig=sig; paintRow(r); }
+}
+
+function firstBad(){
+  let first=null;
+  G.bad.forEach(r=>{ if(!first||r.i<first.i) first=r; });
+  return first;
+}
+function firstProblemText(){
+  const r=firstBad();
+  return r?`Row ${r.i+1}: ${r.probs[0].m}`:"";
+}
+function updateStatus(){
+  const n=G.filled;
+  let text, tone;
+  if(G.total){
+    text=firstProblemText()+(G.total>1?` and ${G.total-1} more`:"");
+    tone="error";
+  }else if(n){ text=`${n} row${n===1?"":"s"} ready`; tone="ok"; }
+  else{ text="Type or paste rows to import."; tone=""; }
+  mgStatus.textContent=text; mgStatus.title=text; mgStatus.dataset.tone=tone;
+  mgImport.textContent=n?`Import ${n} row${n===1?"":"s"}`:"Import rows";
+}
+
+// Single keystroke: re-check only the edited row and the rows sharing its duplicate group.
+function relink(r,affected){
+  const nk=keyOf(r);
+  if(nk===r.key) return;
+  if(r.key){
+    const g=G.groups.get(r.key);
+    g.splice(g.indexOf(r),1);
+    if(g.length) g.forEach(x=>affected.add(x)); else G.groups.delete(r.key);
+  }
+  r.key=nk;
+  if(nk){
+    let g=G.groups.get(nk);
+    if(!g){ g=[]; G.groups.set(nk,g); }
+    g.push(r); g.sort((a,b)=>a.i-b.i);
+    g.forEach(x=>affected.add(x));
+  }
+}
+function flushPending(){
+  clearTimeout(G.timer); G.timer=0;
+  if(!G.pending.size) return;
+  const affected=new Set(G.pending);
+  G.pending.forEach(r=>relink(r,affected));
+  G.pending.clear();
+  affected.forEach(validateRow);
+  updateStatus();
+}
+// Everything: on paste, delete, import and when rows are loaded.
+function validateAll(){
+  clearTimeout(G.timer); G.timer=0; G.pending.clear();
+  G.groups.clear();
+  G.rows.forEach(r=>{
+    r.key=keyOf(r);
+    if(r.key){ let g=G.groups.get(r.key); if(!g) G.groups.set(r.key,g=[]); g.push(r); }
+  });
+  G.rows.forEach(validateRow);
+  updateStatus();
+}
+
+// Replace the whole grid. list is [[id, course, marks], ...]; an empty list leaves one empty row.
+function setRows(list){
+  mgBody.textContent="";
+  G.rows=[]; G.groups.clear(); G.bad.clear(); G.pending.clear();
+  clearTimeout(G.timer); G.timer=0;
+  G.total=0; G.filled=0; G.lastCell=null;
+  const frag=document.createDocumentFragment();
+  list.forEach(v=>appendRow(v[0],v[1],v[2],false,frag));
+  if(!G.rows.length) appendRow("","","",false,frag);
+  mgBody.appendChild(frag);
+  validateAll();
+}
+function clearDraft(){ setRows([]); G.sourceName=null; }
+
+function focusCell(r,f){
+  const inp=r.ins[f];
+  inp.focus();
+  inp.select();
+}
+function focusFirstBad(){
+  const r=firstBad();
+  if(!r) return null;
+  focusCell(r,Math.min(...r.probs.map(p=>p.f)));
+  return r;
+}
+function announce(msg){
+  const a=$("mgAnnounce");
+  a.textContent="";
+  setTimeout(()=>{ a.textContent=msg; },30);
+}
+
+function deleteRow(r,refocusField){
+  const i=r.i;
+  if(G.rows.length===1){
+    r.id=r.course=r.marks=""; r.auto=false;
+    r.ins.forEach(inp=>inp.value="");
+  }else{
+    G.rows.splice(i,1);
+    r.el.remove();
+    G.total-=r.probs.length; if(r.filled) G.filled--; G.bad.delete(r);
+    for(let k=i;k<G.rows.length;k++){ G.rows[k].i=k; labelRow(G.rows[k]); }
+  }
+  validateAll();
+  if(refocusField!==undefined) focusCell(G.rows[Math.min(i,G.rows.length-1)],refocusField);
+}
+
+/* --- grid events (delegated: one listener set for any number of rows) --- */
+mgBody.addEventListener("input",e=>{
+  const inp=e.target;
+  if(!inp.classList.contains("mg-in")) return;
+  const r=inp.closest(".mg-row")._r, f=+inp.dataset.f;
+  if(f===0) r.id=inp.value; else if(f===1){ r.course=inp.value; r.auto=false; } else r.marks=inp.value;
+  G.pending.add(r);
+  clearTimeout(G.timer);
+  G.timer=setTimeout(flushPending,150);
+});
+mgBody.addEventListener("focusin",e=>{ if(e.target.classList.contains("mg-in")) G.lastCell=e.target; });
+mgBody.addEventListener("click",e=>{
+  const b=e.target.closest(".mg-del");
+  if(b) deleteRow(b.closest(".mg-row")._r);
+});
+mgBody.addEventListener("keydown",e=>{
+  const inp=e.target;
+  if(!inp.classList.contains("mg-in") || e.isComposing) return;
+  const r=inp.closest(".mg-row")._r, f=+inp.dataset.f;
+  // Row delete from the keyboard (the x buttons are skipped by Tab to keep Tab spreadsheet-like).
+  if(e.altKey && (e.key==="Delete"||e.key==="Backspace")){ e.preventDefault(); deleteRow(r,f); return; }
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  let to;
+  if(e.key==="Enter") to=e.shiftKey?r.i-1:r.i+1;
+  else if(e.key==="ArrowDown") to=r.i+1;
+  else if(e.key==="ArrowUp") to=r.i-1;
+  else return;
+  e.preventDefault();
+  if(to<0) return;
+  if(to>=G.rows.length){
+    if(e.key!=="Enter") return;
+    appendRow("",r.course,"",!!r.course.trim());   // new row starts with the Course above
+  }
+  focusCell(G.rows[to],f);
+});
+
+// Excel/Sheets paste: tab-separated cells, one row per line, an optional header line.
+function isHeaderLine(cells){
+  const n=cells.map(c=>c.trim().toLowerCase());
+  return n[0]==="bits id" && n.slice(1,3).every((c,k)=>c===COL_NAMES[k+1].toLowerCase());
+}
+function pasteBlock(r0,f0,text){
+  const lines=text.replace(/\r\n?/g,"\n").split("\n");
+  if(lines.length&&lines[lines.length-1]==="") lines.pop();
+  const m=lines.map(l=>l.split("\t"));
+  if(m.length&&isHeaderLine(m[0])) m.shift();
+  if(!m.length) return;
+  const frag=document.createDocumentFragment();
+  m.forEach((cells,k)=>{
+    const r=G.rows[r0.i+k]||appendRow("","","",false,frag);
+    cells.forEach((v,j)=>{ if(f0+j<=2) setCell(r,f0+j,v.trim()); });
+  });
+  mgBody.appendChild(frag);
+  validateAll();
+}
+mgBody.addEventListener("paste",e=>{
+  const inp=e.target;
+  if(!inp.classList.contains("mg-in")) return;
+  const text=(e.clipboardData||window.clipboardData).getData("text");
+  if(!/[\t\r\n]/.test(text)) return;   // a single value pastes normally
+  e.preventDefault();
+  pasteBlock(inp.closest(".mg-row")._r,+inp.dataset.f,text);
+});
+
+/* --- import --- */
+function importGrid(){
+  flushPending();
+  validateAll();
+  const filled=G.rows.filter(r=>r.filled);
+  if(!filled.length){
+    const msg="Add at least one row before importing.";
+    mgStatus.textContent=msg; mgStatus.title=msg; mgStatus.dataset.tone="error";
+    announce(msg);
+    focusCell(G.rows[0],0);
+    return;
+  }
+  if(G.total){
+    focusFirstBad();
+    announce(`Cannot import yet. ${firstProblemText()}${G.total>1?` and ${G.total-1} more`:""}`);
+    return;
+  }
+  // Grid row numbers are passed as __rowNum__ so parseRows says "Row N" for grid row N.
+  const result=parseRows(filled.map(r=>({"BITS ID":r.id,"Course":r.course,"Total Marks":r.marks,__rowNum__:r.i})));
+  if(result.error){   // the live checks use the same rules, so this is a safety net
+    mgStatus.textContent=result.error; mgStatus.title=result.error; mgStatus.dataset.tone="error";
+    announce(result.error);
+    return;
+  }
+  const n=result.rows.length, src=G.sourceName;
+  loadedSource=src;
+  clearDraft();
+  userMode="upload"; applyMode();
+  loadResult(result,{
+    label:src?`${src} (edited in console)`:"Entered in console",
+    meta:`${n} row${n===1?"":"s"}, imported ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}`
+  });
+  tabs.upload.focus();
+  toast(`${n} row${n===1?"":"s"} imported`);
+}
+mgImport.onclick=importGrid;
+
+/* --- Expand: the same grid element moves into a dialog and back --- */
+function openExpand(){
+  if(expandDlg.open) return;
+  const active=(G.lastCell&&G.lastCell.isConnected)?G.lastCell:G.rows[0].ins[0];
+  $("mg").classList.add("in-dialog");
+  $("expandSlot").appendChild($("mg"));
+  $("mgAway").hidden=false;
+  expandDlg.showModal();
+  active.focus();
+}
+expandDlg.addEventListener("close",()=>{
+  $("mgPanel").insertBefore($("mg"),$("mgAway"));
+  $("mg").classList.remove("in-dialog");
+  $("mgAway").hidden=true;
+  if(drop.dataset.mode==="manual"&&G.lastCell&&G.lastCell.isConnected) G.lastCell.focus();
+});
+$("mgExpand").onclick=openExpand;
+$("expandClose").onclick=()=>expandDlg.close();
+$("mgReturn").onclick=()=>expandDlg.close();
+
+/* --- mode switch --- */
+function applyMode(){
+  const eff=(userMode==="manual"&&desk.matches)?"manual":"upload";   // below 1024px it is upload-only
+  drop.dataset.mode=eff;
+  Object.keys(tabs).forEach(m=>{
+    tabs[m].setAttribute("aria-selected",m===eff);
+    tabs[m].tabIndex=m===eff?0:-1;
+  });
+  if(eff==="manual"){
+    drop.setAttribute("role","group");
+    drop.setAttribute("aria-label","Enter marks manually");
+    drop.removeAttribute("tabindex");
+  }else{
+    drop.setAttribute("role","button");
+    drop.setAttribute("aria-label",UPLOAD_LABEL);
+    drop.tabIndex=0;
+    if(expandDlg.open) expandDlg.close();
+  }
+}
+function setMode(m,focus){
+  if(m==="manual" && data.length && !G.rows.some(isFilled)){
+    // Nothing typed yet: open the loaded rows for review and editing.
+    setRows(data.map(d=>[d["BITS ID"],d.Course,String(d["Total Marks"])]));
+    G.sourceName=loadedSource;
+  }
+  userMode=m;
+  applyMode();
+  if(m==="manual"&&focus&&drop.dataset.mode==="manual") focusCell(G.rows[0],0);
+}
+Object.keys(tabs).forEach(m=>{
+  tabs[m].addEventListener("click",()=>{ if(drop.dataset.mode!==m) setMode(m,true); });
+});
+$("modeTabs").addEventListener("keydown",e=>{
+  if(!["ArrowLeft","ArrowRight","Home","End"].includes(e.key)) return;
+  e.preventDefault();
+  const to=(e.key==="ArrowLeft"||e.key==="Home")?"upload":"manual";
+  setMode(to,false);
+  tabs[to].focus();
+});
+desk.addEventListener("change",applyMode);
+
+// Rejected upload -> open its rows in the editor with the bad cells already marked.
+$("fixEditor").onclick=()=>{
+  if(!fixSource) return;
+  const keys={};
+  fixSource.rows.forEach(r=>Object.keys(r).forEach(k=>keys[k.trim().toLowerCase()]=k));
+  const cellText=(r,name)=>{ const v=r[keys[name]]; return v==null?"":String(v); };
+  setRows(fixSource.rows.map(r=>[cellText(r,"bits id"),cellText(r,"course"),cellText(r,"total marks")]));
+  G.sourceName=fixSource.name;
+  userMode="manual"; applyMode();
+  if(!focusFirstBad()) focusCell(G.rows[0],0);
+};
+
+clearDraft();
+applyMode();
 
 /* ===== UI STATE ===== */
 function flagInstructor(msg){
