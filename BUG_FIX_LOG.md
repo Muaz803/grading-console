@@ -1,4 +1,4 @@
-# BITS Digital CodeForge V1.0 — Bug Fix Log
+# Grading Console — Bug Fix Log
 
 Only bugs that were actually fixed are listed. Numbers (#) refer to findings in `BUG_AUDIT.md`.
 

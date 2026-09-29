@@ -1,6 +1,6 @@
-# BITS Digital CodeForge V1.0 — Bug / Issue Audit
+# Grading Console — Bug / Issue Audit
 
-**Application audited:** `BITS_Digital_CodeForge_Challenge.html.html` (single file, 565 lines: HTML + CSS + JS, SheetJS loaded from CDN)
+**Application audited:** `index.html` (single file, 565 lines: HTML + CSS + JS, SheetJS loaded from CDN)
 **Audit date:** 2026-09-28
 **Status:** Audit only. **No application code was modified.**
 
@@ -116,7 +116,7 @@ Every finding states how it was established:
 
 ## 2. Detailed findings
 
-> Line numbers refer to the unmodified `BITS_Digital_CodeForge_Challenge.html.html`.
+> Line numbers refer to the unmodified `index.html`.
 
 ### Data import and course list
 
@@ -751,7 +751,7 @@ Further ideas:
 
 ---
 
-*End of audit. No changes were made to `BITS_Digital_CodeForge_Challenge.html.html`. The test harness lives only in the session scratchpad, outside the project folder.*
+*End of audit. No changes were made to `index.html`. The test harness lives only in the session scratchpad, outside the project folder.*
 
 ---
 
