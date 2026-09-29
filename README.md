@@ -61,6 +61,7 @@ The editor is desktop-only (1024px and wider). On smaller screens the card is up
 - **Welcome screen** with an animated grade scale that also waits for the Excel reader to load, so uploads never hit a half-ready page.
 - **Light and dark themes**: follows the system setting, remembers the instructor's choice, and every colour comes from shared design tokens.
 - **Guided steps** in the top bar (Instructor, Marks file, Course, Grade ranges, Export) that tick off as each is completed.
+- **Guided first-visit tour**: a walkthrough of every feature that appears once for new visitors (setup first, then the grading tools the first time a course is opened), and can be replayed any time from the Tour button in the top bar.
 - **Upload zone with clear states**: idle, drag-over, reading, success and error. Errors list each problem with its row number.
 - **Format guidance** on the page, next to the upload.
 - **"Chalkboard" grade scale** as the one bold visual, with charts and tables in a calm, consistent style.

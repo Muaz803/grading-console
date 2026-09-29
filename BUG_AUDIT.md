@@ -606,6 +606,7 @@ Every finding states how it was established:
 | 69 | Replace `alert`/`confirm` with in-page, accessible notices and dialogs. |
 | 70 | Summary: total students, percentage per grade, and an "Ungraded" count (Stage 1 if used to fix #4). |
 | 71 | Enter marks without a file: an in-card spreadsheet editor (desktop) with paste from Excel, live validation, and one-click "Fix in editor" for rejected uploads. It uses the same validation as file upload. |
+| 72 | Guided first-visit tour: a walkthrough of every feature that appears once for new visitors (setup first, then the grading tools the first time a course is opened), and can be replayed any time from the Tour button in the top bar. |
 
 ---
 

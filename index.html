@@ -611,6 +611,31 @@ dialog[open]{animation:pop .25s var(--ease)}
 #expandDialog .mg-scroll{max-height:min(62vh,640px)}
 
 /* ============================================================
+   Guided tour
+   ============================================================ */
+.tour{position:fixed;inset:0;z-index:200;opacity:0;transition:opacity .2s var(--ease)}
+.tour.show{opacity:1}
+.tour:not(.show){pointer-events:none}
+.tour-dim{position:fixed;inset:0;background:var(--backdrop)}
+.tour-hole{position:fixed;border-radius:var(--r-md);pointer-events:none;box-shadow:0 0 0 2px var(--brand), 0 0 0 100vmax var(--backdrop)}
+.tour-card,.tour-card:focus-visible{
+  box-shadow:0 18px 40px -18px var(--shadow), 0 2px 6px color-mix(in srgb, var(--shadow) 18%, transparent);
+}
+.tour-card{
+  position:fixed;width:340px;max-width:calc(100vw - 24px);padding:18px 18px 14px;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--r-md);
+}
+.tour-card:focus{outline:none}
+.tour-card.dock{left:12px;right:12px;bottom:12px;top:auto;width:auto;max-width:none}
+.tour-card h2{font-size:18px;margin:0 0 6px}
+.tour-card p{margin:0;font-size:14px;color:var(--ink-2)}
+.tour-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px}
+.tour-prog{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.tour-nav{display:flex;align-items:center;gap:8px}
+.tour-skip{border:0;background:none;padding:6px 4px;border-radius:6px;font-size:13px;font-weight:600;color:var(--ink-3);cursor:pointer;white-space:nowrap}
+.tour-skip:hover{color:var(--ink)}
+
+/* ============================================================
    Responsive
    ============================================================ */
 @media (max-width:1080px){
@@ -710,6 +735,9 @@ dialog[open]{animation:pop .25s var(--ease)}
         <div id="timerText" aria-live="off">00:00</div>
       </div>
     </div>
+    <button type="button" class="theme-toggle" id="tourBtn" aria-label="Take a tour" title="Take a tour">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M7.9 7.9a2.2 2.2 0 1 1 3.1 2c-.7.4-1 .8-1 1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="14.4" r=".95" fill="currentColor"/></svg>
+    </button>
     <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch to dark mode" title="Switch to dark mode">
       <svg class="i-moon" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.5 12.2A7 7 0 0 1 7.8 3.5a7 7 0 1 0 8.7 8.7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
       <svg class="i-sun" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M10 2v1.8M10 16.2V18M2 10h1.8M16.2 10H18M4.3 4.3l1.3 1.3M14.4 14.4l1.3 1.3M4.3 15.7l1.3-1.3M14.4 5.6l1.3-1.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -967,6 +995,26 @@ dialog[open]{animation:pop .25s var(--ease)}
   <span id="toastText"></span>
 </div>
 <div class="tip" id="tip" role="tooltip"></div>
+
+<!-- guided tour -->
+<div class="tour" id="tour" hidden>
+  <div class="tour-dim" id="tourDim"></div>
+  <div class="tour-hole" id="tourHole" hidden></div>
+  <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle" aria-describedby="tourText" tabindex="-1">
+    <div aria-live="polite">
+      <h2 id="tourTitle"></h2>
+      <p id="tourText"></p>
+    </div>
+    <div class="tour-foot">
+      <span class="tour-prog" id="tourProg"></span>
+      <div class="tour-nav">
+        <button type="button" class="tour-skip" id="tourSkip">Skip tour</button>
+        <button type="button" class="btn btn-quiet btn-sm" id="tourBack">Back</button>
+        <button type="button" class="btn btn-primary btn-sm" id="tourNext">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -2058,6 +2106,7 @@ function openWorkspace(){
   $("exportBar").classList.add("show");
   const ws=$("workspace").getBoundingClientRect();
   if(ws.top>innerHeight*.7) $("workspace").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+  tourWorkspaceShown();
 }
 
 function refreshEmptyState(){
@@ -2107,6 +2156,178 @@ document.addEventListener("pointermove",e=>{
 });
 document.addEventListener("pointerleave",()=>tip.classList.remove("show"));
 
+/* ===== GUIDED TOUR =====
+   Part 1 (setup) starts on the first visit, Part 2 (grading tools) the first time a course is opened.
+   It only reads the page: it dims it, draws a ring round a real element, and puts back focus and
+   scroll position when it closes. Seen-flags use localStorage with an in-memory fallback. */
+const TOUR_KEY1="codeforge_tour_seen_v1", TOUR_KEY2="codeforge_tour_workspace_seen_v1";
+const tourMem={};
+function tourSeen(k){ if(tourMem[k]) return true; try{ return localStorage.getItem(k)==="1"; }catch(e){ return false; } }
+function tourMark(k){ tourMem[k]=true; try{ localStorage.setItem(k,"1"); }catch(e){} }
+
+const qs=sel=>()=>document.querySelector(sel);
+const TOUR_P1=[
+  {title:"Welcome to the Grading Console",text:"A quick tour of everything it does."},
+  {target:qs("#steps"),title:"Your progress",text:"These steps tick off as you go: Instructor, Marks file, Course, Grade ranges, Export."},
+  {target:qs("#instructorField"),title:"Instructor name",text:"Required before you can pick a course or finalize."},
+  {target:qs("#drop"),title:"Marks file",text:"Drop an Excel file with the columns BITS ID, Course and Total Marks, or use Browse files."},
+  {target:qs("#modeTabs"),when:()=>desk.matches,title:"Enter manually",
+    text:"Type or paste rows instead of uploading; cells are checked as you type. Fix in editor opens a rejected file's rows, and Expand gives big classes more room."},
+  {target:qs(".guide"),title:"Format guidance",text:"Marks file format guidance shows exactly what the file must look like."},
+  {target:qs("#courseField"),title:"Course",text:"Every course in the file appears here. Pick one to start grading."},
+  {target:qs(".topbar-end"),title:"Session tools",
+    text:last=>"The session timer, the theme toggle and this Tour button live here."+(last?" Grading tools appear after you load marks and choose a course.":"")}
+].map(s=>({part:1,...s}));
+const TOUR_P2=[
+  {target:qs(".stats"),title:"Class stats",text:"Students, average, median, min and max for the chosen course."},
+  {target:qs(".board"),title:"Grade scale",text:"One dot per student on shaded grade bands, with the class average marked. Hover a mark for details."},
+  {target:()=>$("hist").closest(".panel"),title:"Marks distribution",text:"Students per 10-mark band, with a normal curve of the same mean and spread. Hover a bar for its count."},
+  {target:()=>grades.closest(".panel"),title:"Grade ranges",text:"Edit any Min or Max and everything updates live. Reset ranges restores the defaults."},
+  {target:qs(".exportbar-inner"),title:"Finalize and export",text:"Finalize & download CSV stays disabled, with the reason shown, until the ranges are valid and your name is filled in. Then it saves grades.csv."}
+].map(s=>({part:2,...s}));
+
+const tourRoot=$("tour"), tourCard=$("tourCard"), tourHole=$("tourHole"), tourDim=$("tourDim");
+const tourP1Steps=()=>TOUR_P1.filter(s=>!s.when||s.when());
+let T=null, tourRaf=0, tourWsTimer=0;
+
+// A step's element, or null when it is missing, hidden or has no size (the step then shows as a centred card).
+function tourTarget(s){
+  const el=s.target?s.target():null;
+  if(!el||!el.isConnected||el.closest("[hidden]")) return null;
+  const r=el.getBoundingClientRect();
+  return (r.width<2||r.height<2)?null:el;
+}
+function tourScrollTo(el){
+  if(el.closest(".topbar,.exportbar")) return;   // always on screen
+  const r=el.getBoundingClientRect();
+  if(innerWidth<700) window.scrollBy({top:r.top-130,behavior:"instant"});
+  else el.scrollIntoView({block:r.height>innerHeight*.6?"start":"center",behavior:"instant"});
+}
+
+function tourPosition(){
+  if(!T) return;
+  const vw=innerWidth, vh=innerHeight, m=12, gap=14, pad=6;
+  let rect=null;
+  if(T.el&&T.el.isConnected){
+    const r=T.el.getBoundingClientRect();
+    if(r.width>=2&&r.height>=2&&r.bottom>0&&r.top<vh&&r.right>0&&r.left<vw) rect=r;
+  }
+  tourHole.hidden=!rect; tourDim.hidden=!!rect;
+  if(rect){
+    Object.assign(tourHole.style,{left:rect.left-pad+"px",top:rect.top-pad+"px",width:rect.width+2*pad+"px",height:rect.height+2*pad+"px"});
+  }
+  if(vw<700){ tourCard.classList.add("dock"); tourCard.style.left=tourCard.style.top=""; return; }
+  tourCard.classList.remove("dock");
+  const cw=tourCard.offsetWidth, ch=tourCard.offsetHeight;
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  let x=(vw-cw)/2, y=(vh-ch)/2;
+  if(rect){
+    const cx=rect.left+rect.width/2-cw/2, cy=rect.top+rect.height/2-ch/2;
+    const right={x:rect.right+pad+gap,y:cy}, left={x:rect.left-pad-gap-cw,y:cy};
+    const below={x:cx,y:rect.bottom+pad+gap}, above={x:cx,y:rect.top-pad-gap-ch};
+    const spots=T.el.closest(".topbar")?[below]:[right,left,below,above];
+    const hole={l:rect.left-pad,t:rect.top-pad,r:rect.right+pad,b:rect.bottom+pad};
+    let placed=null;
+    for(const s of spots){
+      const p={x:clamp(s.x,m,vw-cw-m),y:clamp(s.y,m,vh-ch-m)};
+      const clear=p.x+cw<=hole.l||p.x>=hole.r||p.y+ch<=hole.t||p.y>=hole.b;   // card does not cover the target
+      if(clear){ placed=p; break; }
+    }
+    if(placed){ x=placed.x; y=placed.y; }
+    else{ x=clamp(cx,m,vw-cw-m); y=vh-ch-m; }   // nowhere beside it: sit at the bottom edge
+  }
+  tourCard.style.left=x+"px"; tourCard.style.top=y+"px";
+}
+function tourSchedule(){
+  if(tourRaf) return;
+  tourRaf=requestAnimationFrame(()=>{ tourRaf=0; tourPosition(); });
+}
+
+function tourRender(){
+  const s=T.list[T.i], last=T.i===T.list.length-1, total=tourP1Steps().length+TOUR_P2.length;
+  $("tourTitle").textContent=s.title;
+  $("tourText").textContent=typeof s.text==="function"?s.text(last):s.text;
+  $("tourProg").textContent=`${T.off+T.i+1} of ${total}`;
+  $("tourBack").hidden=T.i===0;
+  $("tourNext").textContent=last?(s.part===1?"Got it":"Finish"):"Next";
+  T.el=tourTarget(s);
+  if(T.el) tourScrollTo(T.el);
+  tourPosition();
+  if(!tourCard.contains(document.activeElement)) tourCard.focus();
+}
+
+function tourClose(){
+  if(!T) return;
+  const {prev,scroll}=T;
+  T=null;
+  removeEventListener("resize",tourSchedule);
+  removeEventListener("scroll",tourSchedule,true);
+  document.removeEventListener("keydown",tourKeys,true);
+  document.querySelector(".app").inert=false;
+  tourRoot.classList.remove("show");
+  setTimeout(()=>{ if(!T) tourRoot.hidden=true; },200);
+  window.scrollTo({top:scroll,behavior:"instant"});   // leave the page where it was
+  if(prev&&prev.isConnected&&prev!==document.body&&prev.focus) prev.focus();
+}
+function tourSkip(){ tourMark(TOUR_KEY1); tourMark(TOUR_KEY2); tourClose(); }
+function tourNext(){
+  if(!T) return;
+  if(T.i===T.list.length-1){
+    if(T.list.some(s=>s.part===1)) tourMark(TOUR_KEY1);
+    if(T.list.some(s=>s.part===2)) tourMark(TOUR_KEY2);
+    tourClose();
+    return;
+  }
+  if(T.list[T.i].part===1&&T.list[T.i+1].part===2) tourMark(TOUR_KEY1);
+  T.i++;
+  tourRender();
+}
+function tourBack(){ if(T&&T.i>0){ T.i--; tourRender(); } }
+
+function tourKeys(e){
+  if(!T) return;
+  if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); tourSkip(); }
+  else if(e.altKey||e.ctrlKey||e.metaKey) return;
+  else if(e.key==="ArrowRight"){ e.preventDefault(); tourNext(); }
+  else if(e.key==="ArrowLeft"){ e.preventDefault(); tourBack(); }
+  else if(e.key==="Tab"){
+    const f=[...tourCard.querySelectorAll("button")].filter(b=>!b.hidden);
+    const at=f.indexOf(document.activeElement);
+    e.preventDefault();
+    f[e.shiftKey?(at<=0?f.length-1:at-1):(at===f.length-1?0:at+1)].focus();
+  }
+}
+
+// part2Only: just the grading-tools steps. withPart2: setup steps, then the grading-tools steps.
+function startTour(part2Only,withPart2){
+  if(T) return;
+  const p1=tourP1Steps();
+  T={list:part2Only?TOUR_P2.slice():p1.concat(withPart2?TOUR_P2:[]),i:0,off:part2Only?p1.length:0,
+     prev:document.activeElement,scroll:window.scrollY,el:null};
+  document.querySelector(".app").inert=true;   // nothing behind the tour can be used or tabbed to
+  tourRoot.hidden=false;
+  addEventListener("resize",tourSchedule);
+  addEventListener("scroll",tourSchedule,true);
+  document.addEventListener("keydown",tourKeys,true);
+  tourRender();
+  requestAnimationFrame(()=>tourRoot.classList.add("show"));
+}
+$("tourNext").onclick=tourNext;
+$("tourBack").onclick=tourBack;
+$("tourSkip").onclick=tourSkip;
+$("tourBtn").onclick=()=>startTour(false,!$("grading").hidden);
+
+// Called once the welcome screen has gone.
+function tourAutoStart(){ if(!tourSeen(TOUR_KEY1)) startTour(false,false); }
+// Called when the grading workspace opens after a course is chosen.
+function tourWorkspaceShown(){
+  if(T||tourWsTimer||!tourSeen(TOUR_KEY1)||tourSeen(TOUR_KEY2)) return;
+  tourWsTimer=setTimeout(()=>{   // let the export bar finish sliding in first
+    tourWsTimer=0;
+    if(!T&&tourSeen(TOUR_KEY1)&&!tourSeen(TOUR_KEY2)&&!$("grading").hidden) startTour(true,false);
+  },600);
+}
+
 /* ===== THEME ===== */
 const THEME_KEY="gc-theme";
 const themeToggle=$("themeToggle");
@@ -2143,7 +2364,7 @@ function finishSplash(){
   setTimeout(()=>{
     s.classList.add("leaving");
     document.body.classList.add("ready");
-    setTimeout(()=>{ s.hidden=true; }, 650);
+    setTimeout(()=>{ s.hidden=true; tourAutoStart(); }, 650);
   }, failed?1200:350);
 }
 const splashMin=new Promise(r=>setTimeout(r, matchMedia("(prefers-reduced-motion: reduce)").matches?300:1500));
